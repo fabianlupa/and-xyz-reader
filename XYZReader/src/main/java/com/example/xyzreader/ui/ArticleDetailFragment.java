@@ -40,12 +40,21 @@ public class ArticleDetailFragment extends Fragment implements
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putLong(ARG_ITEM_ID, mItemId);
+
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null && getArguments().containsKey(ARG_ITEM_ID)) {
             mItemId = getArguments().getLong(ARG_ITEM_ID);
         }
+
+        setRetainInstance(true);
     }
 
     @Override

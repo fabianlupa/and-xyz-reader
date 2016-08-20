@@ -3,8 +3,10 @@ package com.example.xyzreader.ui;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.app.ShareCompat;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -30,6 +32,11 @@ public class ArticleListActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
     private RecyclerView mRecyclerView;
+    private TextView mTabletTitleTextView;
+    private ImageView mTabletImageView;
+    private View mTabletDetailContainerView;
+    private FloatingActionButton mTabletShareFab;
+    private boolean tabletMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +44,15 @@ public class ArticleListActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_article_list);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
+        if (findViewById(R.id.tablet_detail_container) != null) {
+            // We are on tablet layout
+            tabletMode = true;
+            mTabletTitleTextView = (TextView) findViewById(R.id.tablet_title);
+            mTabletImageView = (ImageView) findViewById(R.id.tablet_image);
+            mTabletDetailContainerView = findViewById(R.id.tablet_detail_container);
+            mTabletShareFab = (FloatingActionButton) findViewById(R.id.share_fab);
+        }
 
         getSupportLoaderManager().initLoader(0, null, this);
 
@@ -86,13 +102,37 @@ public class ArticleListActivity extends AppCompatActivity implements
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    ActivityOptionsCompat options =
-                            ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                    ArticleListActivity.this, vh.thumbnailView,
-                                    getString(R.string.image_transition));
-                    startActivity(new Intent(Intent.ACTION_VIEW,
-                                    ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))),
-                            options.toBundle());
+                    if (!tabletMode) {
+                        ActivityOptionsCompat options =
+                                ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                        ArticleListActivity.this, vh.thumbnailView,
+                                        getString(R.string.image_transition));
+                        startActivity(new Intent(Intent.ACTION_VIEW,
+                                        ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))),
+                                options.toBundle());
+                    } else {
+                        ArticleDetailFragment fragment = ArticleDetailFragment.newInstance(getItemId(vh.getAdapterPosition()));
+                        getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.tablet_detail_container, fragment)
+                                .commit();
+
+                        mCursor.moveToPosition(vh.getAdapterPosition());
+                        String title = mCursor.getString(ArticleLoader.Query.TITLE);
+                        String imageUrl = mCursor.getString(ArticleLoader.Query.PHOTO_URL);
+                        Picasso.with(getApplicationContext()).load(imageUrl).into(mTabletImageView);
+                        mTabletTitleTextView.setText(title);
+                        mTabletShareFab.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                startActivity(Intent.createChooser(ShareCompat.IntentBuilder
+                                        .from(ArticleListActivity.this)
+                                        .setType("text/plain")
+                                        .setText("Some sample text")
+                                        .getIntent(), getString(R.string.action_share)));
+                            }
+                        });
+                    }
                 }
             });
             return vh;

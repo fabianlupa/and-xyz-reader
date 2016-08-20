@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.Loader;
@@ -93,10 +94,15 @@ public class ArticleDetailActivity extends AppCompatActivity
         ((CollapsingToolbarLayout) findViewById(R.id.toolbar_layout))
                 .setTitle(mCursor.getString(ArticleLoader.Query.TITLE));
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.detail_fragment_container, ArticleDetailFragment.newInstance(mItemId), "detail")
-                .commitAllowingStateLoss();
+        Fragment detailFragment = getSupportFragmentManager().findFragmentByTag("detail");
+        if (detailFragment == null) {
+            detailFragment = ArticleDetailFragment.newInstance(mItemId);
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.detail_fragment_container, detailFragment, "detail")
+                    .commitAllowingStateLoss();
+        }
     }
 
     @Override
